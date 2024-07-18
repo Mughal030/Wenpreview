@@ -1,0 +1,12 @@
+{
+  "name": "Web VNC Setup",
+  "image": "mcr.microsoft.com/devcontainers/universal:latest",
+  "postCreateCommand": "bash ./setup.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode-remote.remote-containers"
+      ]
+    }
+  }
+}
