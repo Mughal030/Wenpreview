@@ -31,11 +31,13 @@ jobs:
     - name: Start Ngrok
       id: start-ngrok
       run: |
-        nohup ngrok tcp 3389 --log=stdout &
+        nohup ngrok tcp 3389 --log=stdout > ngrok.log &
         sleep 10
+        cat ngrok.log
         NGROK_URL=$(curl -s localhost:4040/api/tunnels | jq -r .tunnels[0].public_url)
         echo "NGROK_URL=${NGROK_URL}" >> $GITHUB_OUTPUT
-
+        echo "NGROK_URL: ${NGROK_URL}"
+        
     - name: Display Connection Details
       run: |
         echo "You can connect to the Ubuntu remote desktop using the following details:"
