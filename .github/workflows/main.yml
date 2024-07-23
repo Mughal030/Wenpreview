@@ -16,7 +16,7 @@ jobs:
     - name: Install VNC and Desktop Environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y xfce4 xfce4-goodies tightvncserver
+        sudo apt-get install -y xfce4 xfce4-goodies tightvncserver jq
         mkdir -p ~/.vnc
         echo "Umair@030200" | vncpasswd -f > ~/.vnc/passwd
         chmod 600 ~/.vnc/passwd
@@ -52,3 +52,7 @@ jobs:
         echo "VNC Host: ${{ steps.start-ngrok.outputs.NGROK_URL }}"
         echo "VNC Username: runneradmin"
         echo "VNC Password: Umair@030200"
+        
+    - name: Set VNC Password
+      run: |
+        echo -e "Umair@030200\nUmair@030200" | sudo passwd runneradmin
