@@ -1,4 +1,4 @@
-name: Ubuntu Remote Desktop (RDP)
+name: Ubuntu Remote Desktop (VNC)
 
 on:
   push:
@@ -7,49 +7,44 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v2
     
-    - name: Install RDP
+    - name: Install and Configure VNC
       run: |
         sudo apt-get update
-        sudo apt-get install -y xrdp
-        sudo systemctl enable xrdp
-        sudo systemctl start xrdp
+        sudo apt-get install -y xfce4 xfce4-goodies tightvncserver
+        mkdir -p ~/.vnc
+        echo "Umair@030200" | vncpasswd -f > ~/.vnc/passwd
+        chmod 600 ~/.vnc/passwd
+        vncserver :1
+        vncserver -kill :1
+        echo "#!/bin/bash" > ~/.vnc/xstartup
+        echo "xrdb $HOME/.Xresources" >> ~/.vnc/xstartup
+        echo "startxfce4 &" >> ~/.vnc/xstartup
+        chmod +x ~/.vnc/xstartup
+        vncserver :1 -geometry 1920x1080 -depth 24
         
-    - name: Expose RDP with ngrok
-      id: expose-rdp
-      env:
-        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+    - name: Expose VNC
+      id: expose-vnc
       run: |
-        # Install and start ngrok
-        wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
-        unzip ngrok-stable-linux-amd64.zip
-        ./ngrok authtoken $NGROK_AUTH_TOKEN
-        ./ngrok tcp 3389 &
+        VNC_HOST=$(curl -s https://api.ipify.org)
+        VNC_PORT=5901
+        VNC_USERNAME=runneradmin
+        VNC_PASSWORD=Umair@030200
         
-        # Get the ngrok URL
-        NGROK_URL=$(./ngrok status | grep -o -E "tcp://[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+" | head -n 1)
-        
-        # Extract the IP address and port
-        RDP_HOST=$(echo $NGROK_URL | cut -d'/' -f3 | cut -d':' -f1)
-        RDP_PORT=$(echo $NGROK_URL | cut -d':' -f2)
-        RDP_USERNAME=runneradmin
-        RDP_PASSWORD=$(openssl rand -hex 8)
-        
-        echo "RDP_HOST=$RDP_HOST" >> $GITHUB_OUTPUT
-        echo "RDP_PORT=$RDP_PORT" >> $GITHUB_OUTPUT
-        echo "RDP_USERNAME=$RDP_USERNAME" >> $GITHUB_OUTPUT
-        echo "RDP_PASSWORD=$RDP_PASSWORD" >> $GITHUB_OUTPUT
+        echo "VNC_HOST=$VNC_HOST" >> $GITHUB_OUTPUT
+        echo "VNC_PORT=$VNC_PORT" >> $GITHUB_OUTPUT
+        echo "VNC_USERNAME=$VNC_USERNAME" >> $GITHUB_OUTPUT
+        echo "VNC_PASSWORD=$VNC_PASSWORD" >> $GITHUB_OUTPUT
         
     - name: Display Connection Details
       run: |
         echo "You can connect to the Ubuntu remote desktop using the following details:"
-        echo "RDP Host: ${{ steps.expose-rdp.outputs.RDP_HOST }}"
-        echo "RDP Port: ${{ steps.expose-rdp.outputs.RDP_PORT }}"
-        echo "RDP Username: ${{ steps.expose-rdp.outputs.RDP_USERNAME }}"
-        echo "RDP Password: ${{ steps.expose-rdp.outputs.RDP_PASSWORD }}"
+        echo "VNC Host: ${{ steps.expose-vnc.outputs.VNC_HOST }}"
+        echo "VNC Port: ${{ steps.expose-vnc.outputs.VNC_PORT }}"
+        echo "VNC Username: ${{ steps.expose-vnc.outputs.VNC_USERNAME }}"
+        echo "VNC Password: ${{ steps.expose-vnc.outputs.VNC_PASSWORD }}"
