@@ -1,4 +1,4 @@
-name: Ubuntu Remote Desktop
+name: Ubuntu Remote Desktop (Guacamole)
 
 on:
   push:
@@ -14,24 +14,28 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: Install RDP
+    - name: Install Guacamole
       run: |
         sudo apt-get update
-        sudo apt-get install -y xrdp
-        sudo systemctl enable xrdp
-        sudo systemctl start xrdp
+        sudo apt-get install -y guacamole-client guacamole-server
+        sudo systemctl enable guacd
+        sudo systemctl start guacd
         
-    - name: Expose RDP
+    - name: Expose Guacamole
       run: |
-        echo "RDP_HOST=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
-        echo "RDP_PORT=3389" >> $GITHUB_OUTPUT
-        echo "RDP_USERNAME=runneradmin" >> $GITHUB_OUTPUT
-        echo "RDP_PASSWORD=Umair@030200" >> $GITHUB_OUTPUT
+        GUACAMOLE_HOST=$(curl -s https://api.ipify.org)
+        GUACAMOLE_PORT=8080
+        GUACAMOLE_USERNAME=runneradmin
+        GUACAMOLE_PASSWORD=Umair@030200
+        
+        echo "GUACAMOLE_HOST=$GUACAMOLE_HOST" >> $GITHUB_OUTPUT
+        echo "GUACAMOLE_PORT=$GUACAMOLE_PORT" >> $GITHUB_OUTPUT
+        echo "GUACAMOLE_USERNAME=$GUACAMOLE_USERNAME" >> $GITHUB_OUTPUT
+        echo "GUACAMOLE_PASSWORD=$GUACAMOLE_PASSWORD" >> $GITHUB_OUTPUT
         
     - name: Display Connection Details
       run: |
-        echo "You can connect to the Ubuntu remote desktop using the following details:"
-        echo "RDP Host: ${{ steps.expose-rdp.outputs.RDP_HOST }}"
-        echo "RDP Port: ${{ steps.expose-rdp.outputs.RDP_PORT }}"
-        echo "RDP Username: ${{ steps.expose-rdp.outputs.RDP_USERNAME }}"
-        echo "RDP Password: ${{ steps.expose-rdp.outputs.RDP_PASSWORD }}"
+        echo "You can access the Ubuntu remote desktop using the following URL in your browser:"
+        echo "http://${{ steps.expose-guacamole.outputs.GUACAMOLE_HOST }}:${{ steps.expose-guacamole.outputs.GUACAMOLE_PORT }}"
+        echo "Username: ${{ steps.expose-guacamole.outputs.GUACAMOLE_USERNAME }}"
+        echo "Password: ${{ steps.expose-guacamole.outputs.GUACAMOLE_PASSWORD }}"
