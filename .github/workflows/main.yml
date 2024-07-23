@@ -22,11 +22,12 @@ jobs:
         sudo systemctl start xrdp
         
     - name: Expose RDP
+      id: expose-rdp
       run: |
         RDP_HOST=$(curl -s https://api.ipify.org)
         RDP_PORT=3389
         RDP_USERNAME=runneradmin
-        RDP_PASSWORD=Umair@030200
+        RDP_PASSWORD=$(openssl rand -hex 8)
         
         echo "RDP_HOST=$RDP_HOST" >> $GITHUB_OUTPUT
         echo "RDP_PORT=$RDP_PORT" >> $GITHUB_OUTPUT
