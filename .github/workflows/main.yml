@@ -19,7 +19,7 @@ jobs:
     - name: Install Kali Linux
       run: |
         # Install Kali Linux desktop
-        sudo apt-get install -y kali-desktop-full
+        sudo apt-get install -y kali-linux-default-desktop
         
     - name: Start Kali Linux desktop
       run: |
