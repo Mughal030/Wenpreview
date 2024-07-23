@@ -9,10 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Add Kali Linux repository
+      run: |
+        # Add the Kali Linux repository
+        echo "deb http://http.kali.org/kali kali-rolling main non-free contrib" | sudo tee /etc/apt/sources.list.d/kali.list
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ED444FF07D8D0BF6
+        sudo apt-get update
+        
     - name: Install Kali Linux
       run: |
-        # Install Kali Linux
-        sudo apt-get update
+        # Install Kali Linux desktop
         sudo apt-get install -y kali-linux-desktop
         
     - name: Start Kali Linux desktop
