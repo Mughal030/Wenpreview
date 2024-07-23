@@ -9,14 +9,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v2
     
     - name: Install VNC and Desktop Environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y xfce4 xfce4-goodies tightvncserver jq
+        sudo apt-get install -y xfce4 xfce4-goodies tightvncserver jq curl
         mkdir -p ~/.vnc
         echo "Umair@030200" | vncpasswd -f > ~/.vnc/passwd
         chmod 600 ~/.vnc/passwd
@@ -25,31 +25,17 @@ jobs:
         echo "#!/bin/bash\nxrdb $HOME/.Xresources\nstartxfce4 &" > ~/.vnc/xstartup
         chmod +x ~/.vnc/xstartup
         vncserver :1 -geometry 1280x800 -depth 24
-
-    - name: Download Latest Ngrok
+    
+    - name: Get Public IP Address
+      id: get-ip
       run: |
-        wget -q -O ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
-        unzip ngrok.zip
-        sudo mv ngrok /usr/local/bin/ngrok
-        
-    - name: Configure Ngrok
-      run: |
-        ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
-        
-    - name: Start Ngrok
-      id: start-ngrok
-      run: |
-        nohup ngrok tcp 5901 --log=stdout > ngrok.log &
-        sleep 10
-        cat ngrok.log
-        NGROK_URL=$(curl -s localhost:4040/api/tunnels | jq -r .tunnels[0].public_url)
-        echo "NGROK_URL=${NGROK_URL}" >> $GITHUB_OUTPUT
-        echo "NGROK_URL: ${NGROK_URL}"
+        IP_ADDRESS=$(curl -s https://api.ipify.org)
+        echo "IP_ADDRESS=${IP_ADDRESS}" >> $GITHUB_ENV
         
     - name: Display Connection Details
       run: |
         echo "You can connect to the Ubuntu remote desktop using the following details:"
-        echo "VNC Host: ${{ steps.start-ngrok.outputs.NGROK_URL }}"
+        echo "VNC Host: ${{ env.IP_ADDRESS }}:5901"
         echo "VNC Username: runneradmin"
         echo "VNC Password: Umair@030200"
         
