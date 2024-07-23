@@ -1,7 +1,10 @@
-name: Kali Linux Remote Desktop
+name: Ubuntu Remote Desktop
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
 
@@ -9,43 +12,26 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Add Kali Linux repository
+    - uses: actions/checkout@v2
+    
+    - name: Install RDP
       run: |
-        # Add the Kali Linux repository
-        echo "deb http://http.kali.org/kali kali-rolling main non-free contrib" | sudo tee /etc/apt/sources.list.d/kali.list
-        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ED444FF07D8D0BF6
         sudo apt-get update
+        sudo apt-get install -y xrdp
+        sudo systemctl enable xrdp
+        sudo systemctl start xrdp
         
-    - name: Install Kali Linux
+    - name: Expose RDP
       run: |
-        # Install Kali Linux desktop
-        sudo apt-get install -y kali-linux-default-desktop
+        echo "RDP_HOST=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
+        echo "RDP_PORT=3389" >> $GITHUB_OUTPUT
+        echo "RDP_USERNAME=runneradmin" >> $GITHUB_OUTPUT
+        echo "RDP_PASSWORD=Umair@030200" >> $GITHUB_OUTPUT
         
-    - name: Start Kali Linux desktop
+    - name: Display Connection Details
       run: |
-        # Set the username and password
-        USERNAME="runneradmin"
-        PASSWORD="Umair@030200"
-        
-        # Start the Kali Linux desktop
-        xvfb-run --auto-servernum --server-num=1 --server-args="-ac" \
-        /usr/bin/startxfce4 &
-        
-        # Expose the desktop via ngrok
-        ngrok http 3389 --region=us --log=stdout > ngrok_url.txt
-        
-    - name: Get ngrok URL
-      id: ngrok
-      run: |
-        # Read the ngrok URL from the file
-        NGROK_URL=$(cat ngrok_url.txt | grep -o -E "https://[a-z0-9]+\.ngrok.io")
-        echo "::set-output name=url::$NGROK_URL"
-        
-    - name: Print instructions
-      run: |
-        echo "To access the remote Kali Linux desktop, follow these steps:"
-        echo "1. Open your web browser and go to the following URL:"
-        echo "${{ steps.ngrok.outputs.url }}"
-        echo "2. When prompted, enter the username: $USERNAME"
-        echo "3. When prompted, enter the password: $PASSWORD"
-        echo "You should now have access to the remote Kali Linux desktop!"
+        echo "You can connect to the Ubuntu remote desktop using the following details:"
+        echo "RDP Host: ${{ steps.expose-rdp.outputs.RDP_HOST }}"
+        echo "RDP Port: ${{ steps.expose-rdp.outputs.RDP_PORT }}"
+        echo "RDP Username: ${{ steps.expose-rdp.outputs.RDP_USERNAME }}"
+        echo "RDP Password: ${{ steps.expose-rdp.outputs.RDP_PASSWORD }}"
