@@ -1,43 +1,22 @@
-name: Ubuntu Remote Desktop (RDP)
+name: Windows - LiteManager
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-
   build:
-    runs-on: ubuntu-latest
+    name: Start Building...
+    runs-on: windows-latest
+    timeout-minutes: 9999
     
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Install RDP
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y xrdp
-        sudo systemctl enable xrdp
-        sudo systemctl start xrdp
-        
-    - name: Expose RDP
-      id: expose-rdp
-      run: |
-        RDP_HOST=$(curl -s https://api.ipify.org)
-        RDP_PORT=3389
-        RDP_USERNAME=runneradmin
-        RDP_PASSWORD=$(openssl rand -hex 8)
-        
-        echo "RDP_HOST=$RDP_HOST" >> $GITHUB_OUTPUT
-        echo "RDP_PORT=$RDP_PORT" >> $GITHUB_OUTPUT
-        echo "RDP_USERNAME=$RDP_USERNAME" >> $GITHUB_OUTPUT
-        echo "RDP_PASSWORD=$RDP_PASSWORD" >> $GITHUB_OUTPUT
-        
-    - name: Display Connection Details
-      run: |
-        echo "You can connect to the Ubuntu remote desktop using the following details:"
-        echo "RDP Host: ${{ steps.expose-rdp.outputs.RDP_HOST }}"
-        echo "RDP Port: ${{ steps.expose-rdp.outputs.RDP_PORT }}"
-        echo "RDP Username: ${{ steps.expose-rdp.outputs.RDP_USERNAME }}"
-        echo "RDP Password: ${{ steps.expose-rdp.outputs.RDP_PASSWORD }}"
+      - name: Downloading & Installing Essentials
+        run: |
+          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/lm_win-10_github_rdp/-/raw/main/Downloads.bat" -OutFile "Downloads.bat"
+          cmd /c Downloads.bat
+
+      - name: Connect to LiteManager
+        run: cmd /c show.bat
+
+      - name: Time Counter
+        run: cmd /c loop.bat
