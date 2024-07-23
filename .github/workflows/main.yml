@@ -1,0 +1,38 @@
+name: Kali Linux RDP
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Set up Kali Linux
+      uses: actions/setup-kali@v1
+      with:
+        kali-version: 'latest'
+        
+    - name: Generate RDP connection details
+      id: rdp
+      run: |
+        # Set the username and password
+        USERNAME="runneradmin"
+        PASSWORD="Umair@030200"
+        
+        # Generate the RDP connection URL
+        RDP_URL="https://rdp.github.com?username=$USERNAME&password=$PASSWORD"
+        
+        echo "::set-output name=rdp_url::$RDP_URL"
+        
+    - name: Provide RDP connection URL
+      run: |
+        echo "You can access the remote Kali Linux desktop by following these steps:"
+        echo "1. Open your Chrome browser."
+        echo "2. Copy and paste the following URL into the address bar:"
+        echo "${{ steps.rdp.outputs.rdp_url }}"
+        echo "3. Press Enter."
+        echo "4. When prompted, enter the username 'runneradmin' and the password 'Umair@030200'."
+        echo "You should now have access to the remote Kali Linux desktop!"
+
