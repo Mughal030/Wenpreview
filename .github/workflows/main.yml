@@ -1,22 +1,55 @@
-name: Windows - LiteManager
+name: Ubuntu Remote Desktop (RDP)
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
+
   build:
-    name: Start Building...
-    runs-on: windows-latest
-    timeout-minutes: 9999
+    runs-on: ubuntu-latest
     
     steps:
-      - name: Downloading & Installing Essentials
-        run: |
-          Invoke-WebRequest -Uri "https://gitlab.com/chamod12/lm_win-10_github_rdp/-/raw/main/Downloads.bat" -OutFile "Downloads.bat"
-          cmd /c Downloads.bat
-
-      - name: Connect to LiteManager
-        run: cmd /c show.bat
-
-      - name: Time Counter
-        run: cmd /c loop.bat
+    - uses: actions/checkout@v2
+    
+    - name: Install RDP
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xrdp
+        sudo systemctl enable xrdp
+        sudo systemctl start xrdp
+        
+    - name: Expose RDP with ngrok
+      id: expose-rdp
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+      run: |
+        # Install and start ngrok
+        wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
+        unzip ngrok-stable-linux-amd64.zip
+        ./ngrok authtoken $NGROK_AUTH_TOKEN
+        ./ngrok tcp 3389 &
+        
+        # Get the ngrok URL
+        NGROK_URL=$(./ngrok status | grep -o -E "tcp://[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+" | head -n 1)
+        
+        # Extract the IP address and port
+        RDP_HOST=$(echo $NGROK_URL | cut -d'/' -f3 | cut -d':' -f1)
+        RDP_PORT=$(echo $NGROK_URL | cut -d':' -f2)
+        RDP_USERNAME=runneradmin
+        RDP_PASSWORD=$(openssl rand -hex 8)
+        
+        echo "RDP_HOST=$RDP_HOST" >> $GITHUB_OUTPUT
+        echo "RDP_PORT=$RDP_PORT" >> $GITHUB_OUTPUT
+        echo "RDP_USERNAME=$RDP_USERNAME" >> $GITHUB_OUTPUT
+        echo "RDP_PASSWORD=$RDP_PASSWORD" >> $GITHUB_OUTPUT
+        
+    - name: Display Connection Details
+      run: |
+        echo "You can connect to the Ubuntu remote desktop using the following details:"
+        echo "RDP Host: ${{ steps.expose-rdp.outputs.RDP_HOST }}"
+        echo "RDP Port: ${{ steps.expose-rdp.outputs.RDP_PORT }}"
+        echo "RDP Username: ${{ steps.expose-rdp.outputs.RDP_USERNAME }}"
+        echo "RDP Password: ${{ steps.expose-rdp.outputs.RDP_PASSWORD }}"
