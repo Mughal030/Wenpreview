@@ -1,4 +1,4 @@
-name: Ubuntu Remote Desktop (RDP)
+name: Ubuntu Remote Desktop (VNC)
 
 on:
   push:
@@ -13,29 +13,33 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: Install RDP
+    - name: Install VNC and Desktop Environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y xrdp xfce4 xfce4-goodies
-        sudo systemctl enable xrdp
-        sudo systemctl start xrdp
-        echo "xfce4-session" > ~/.xsession
-        sudo service xrdp restart
-    
-    - name: Download Latest Ngrok
+        sudo apt-get install -y xfce4 xfce4-goodies tightvncserver
+        mkdir -p ~/.vnc
+        echo "Umair@030200" | vncpasswd -f > ~/.vnc/passwd
+        chmod 600 ~/.vnc/passwd
+        vncserver :1
+        vncserver -kill :1
+        echo "#!/bin/bash\nxrdb $HOME/.Xresources\nstartxfce4 &" > ~/.vnc/xstartup
+        chmod +x ~/.vnc/xstartup
+        vncserver :1 -geometry 1280x800 -depth 24
+
+    - name: Install Ngrok
       run: |
-        wget -q -O ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
+        wget -q -O ngrok.zip https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
         unzip ngrok.zip
         sudo mv ngrok /usr/local/bin/ngrok
         
     - name: Configure Ngrok
       run: |
-        ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+        ngrok authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
         
     - name: Start Ngrok
       id: start-ngrok
       run: |
-        nohup ngrok tcp 3389 --log=stdout > ngrok.log &
+        nohup ngrok tcp 5901 --log=stdout > ngrok.log &
         sleep 10
         cat ngrok.log
         NGROK_URL=$(curl -s localhost:4040/api/tunnels | jq -r .tunnels[0].public_url)
@@ -45,10 +49,6 @@ jobs:
     - name: Display Connection Details
       run: |
         echo "You can connect to the Ubuntu remote desktop using the following details:"
-        echo "RDP Host: ${{ steps.start-ngrok.outputs.NGROK_URL }}"
-        echo "RDP Username: runneradmin"
-        echo "RDP Password: Umair@030200"
-        
-    - name: Set RDP Password
-      run: |
-        echo -e "Umair@030200\nUmair@030200" | sudo passwd runneradmin
+        echo "VNC Host: ${{ steps.start-ngrok.outputs.NGROK_URL }}"
+        echo "VNC Username: runneradmin"
+        echo "VNC Password: Umair@030200"
