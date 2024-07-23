@@ -1,4 +1,4 @@
-name: Ubuntu Remote Desktop (VNC)
+name: Ubuntu Remote Desktop (RDP)
 
 on:
   push:
@@ -13,38 +13,36 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: Install and Configure VNC
+    - name: Install RDP
       run: |
         sudo apt-get update
-        sudo apt-get install -y xfce4 xfce4-goodies tightvncserver
-        mkdir -p ~/.vnc
-        echo "Umair@030200" | vncpasswd -f > ~/.vnc/passwd
-        chmod 600 ~/.vnc/passwd
-        vncserver :1
-        vncserver -kill :1
-        echo "#!/bin/bash" > ~/.vnc/xstartup
-        echo "xrdb $HOME/.Xresources" >> ~/.vnc/xstartup
-        echo "startxfce4 &" >> ~/.vnc/xstartup
-        chmod +x ~/.vnc/xstartup
-        vncserver :1 -geometry 1920x1080 -depth 24
-        
-    - name: Expose VNC
-      id: expose-vnc
+        sudo apt-get install -y xrdp xfce4 xfce4-goodies
+        sudo systemctl enable xrdp
+        sudo systemctl start xrdp
+        echo "xfce4-session" > ~/.xsession
+        sudo service xrdp restart
+    
+    - name: Install Ngrok
       run: |
-        VNC_HOST=$(curl -s https://api.ipify.org)
-        VNC_PORT=5901
-        VNC_USERNAME=runneradmin
-        VNC_PASSWORD=Umair@030200
+        wget -q -O ngrok.zip https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
+        unzip ngrok.zip
+        sudo mv ngrok /usr/local/bin/ngrok
         
-        echo "VNC_HOST=$VNC_HOST" >> $GITHUB_OUTPUT
-        echo "VNC_PORT=$VNC_PORT" >> $GITHUB_OUTPUT
-        echo "VNC_USERNAME=$VNC_USERNAME" >> $GITHUB_OUTPUT
-        echo "VNC_PASSWORD=$VNC_PASSWORD" >> $GITHUB_OUTPUT
-        
+    - name: Start Ngrok
+      id: start-ngrok
+      run: |
+        nohup ngrok tcp 3389 --log=stdout &
+        sleep 10
+        NGROK_URL=$(curl -s localhost:4040/api/tunnels | jq -r .tunnels[0].public_url)
+        echo "NGROK_URL=${NGROK_URL}" >> $GITHUB_OUTPUT
+
     - name: Display Connection Details
       run: |
         echo "You can connect to the Ubuntu remote desktop using the following details:"
-        echo "VNC Host: ${{ steps.expose-vnc.outputs.VNC_HOST }}"
-        echo "VNC Port: ${{ steps.expose-vnc.outputs.VNC_PORT }}"
-        echo "VNC Username: ${{ steps.expose-vnc.outputs.VNC_USERNAME }}"
-        echo "VNC Password: ${{ steps.expose-vnc.outputs.VNC_PASSWORD }}"
+        echo "RDP Host: ${{ steps.start-ngrok.outputs.NGROK_URL }}"
+        echo "RDP Username: runneradmin"
+        echo "RDP Password: Umair@030200"
+        
+    - name: Set RDP Password
+      run: |
+        echo -e "Umair@030200\nUmair@030200" | sudo passwd runneradmin
